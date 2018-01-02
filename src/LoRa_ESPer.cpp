@@ -3,7 +3,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <ESP8266WebServer.h>
-#include <Ethernet.h>
 #include <ArduinoJson.h>
 #include <LoRa.h>
 
@@ -221,7 +220,6 @@ void initWebServer() {
 
 void initLoRa() {
   SPI.setFrequency(4E6);
-  //LoRa.setSyncWord(0x34);
   LoRa.setSPIFrequency(4E6);
   // NSS = D8, Reset = D0,  DIO0 = D1
   LoRa.setPins(15, 16, 5);
@@ -243,7 +241,6 @@ void setup() {
   Serial.println();
 	Serial.print("LoRa ESPer Bridge ");
   Serial.println(version);
-
   Serial.println();
 
   initLoRa();
