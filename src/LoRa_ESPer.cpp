@@ -2,7 +2,7 @@
 #include <SPI.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
-#include <ESP8266WebServer.h>
+#include <WebServer.h>
 #include <ArduinoJson.h>
 #include <LoRa.h>
 
@@ -27,17 +27,15 @@ const char *ssid = "LoRa ESPer";
 const char *host = "lora";
 const size_t packet_buffer_length = 50;
 const size_t json_buffer_size = JSON_ARRAY_SIZE(3) + packet_buffer_length * JSON_OBJECT_SIZE(3);
-ESP8266WebServer server(80);
+WebServer server(80);
 
 
 /*
  * Volatile variables
  */
-byte init_error = 0;
 lora_packet* packets[packet_buffer_length + 1];
 size_t p_pos = 0;
 int sync_word = 0x34;
-String flash_bag = "";
 
 
 /*
@@ -49,7 +47,6 @@ void handleJson();
 void handleChannelGet();
 void handleChannelPost();
 // Web utilities
-String getFlashbag();
 String buildPacketsJson();
 // Packet buffer utiliities
 void pushPacket(lora_packet packet);
@@ -60,24 +57,6 @@ void initWiFiAP();
 void initWebServer();
 void initLoRa();
 
-
-/*
- * Address: http://192.168.4.1
- */
-void handleRoot() {
-  if (init_error == 0) {
-    server.send(200, "text/html", getFlashbag() +
-      "<h1>You are connected</h1><br /><br /><p>" +
-      "<a href='/json'><code>/json</code></a> - Show last received LoRa packets in JSON.<br />" +
-      "<a href='/syncword'><code>/syncword</code></a> - Show and change the sync word."
-      "</p>"
-    );
-  } else {
-   char error_msg[39];
-   sprintf(error_msg, "Error during initialization (code 0x%#02x)", init_error);
-   server.send(200, "text/html", error_msg);
-  }
-}
 
 void handleJson() {
   server.send(200, "application/json", buildPacketsJson());
@@ -90,10 +69,10 @@ void handleSyncWordGet() {
     sprintf(sw_buff, "0x%#02X (%u)", sync_word, sync_word);
     sw_name = String(sw_buff);
   }
+
   server.send(200, "text/html",
-    getFlashbag() +
-    "<p>Current sync word: <code>" + sw_name + "</code></p><br />" +
-    "<p>Public sync word: <code>0x34 (52)</code><br />Private (LoRaWAN) sync word: <code>0x12 (18)</code><br />Allowed: 1-byte integer (between 0 and 255)</p><br />" +
+    "<p>Current sync word: <code>" + sw_name + "</code></p><br />"
+    "<p>Public sync word: <code>0x34 (52)</code><br />Private (LoRaWAN) sync word: <code>0x12 (18)</code><br />Allowed: 1-byte integer (between 0 and 255)</p><br />"
     "<form method='post'><p>Set new sync word (dec): <input name='sync_word' value='" + (sync_word > -1 ? String(sync_word) : "") + "' /> <input type='submit' name='submit' value='submit' /></p></form>"
   );
 }
@@ -108,29 +87,17 @@ void handleSyncWordPost() {
       if (sw_i_new > -1 && sw_i_new < 256) {
         sync_word = sw_i_new;
         LoRa.setSyncWord(sync_word);
-        flash_bag += "Sync word set to " + String(sw_i_new) + ".\n";
+        char flash[26];
+        sprintf(flash, "Sync word set to 0x%#02X (%u).", sw_i_new, sw_i_new);
+        server.addFlash("success", flash);
       } else {
-        flash_bag += "Sync word must be between 0 and 255.\n";
+        server.addFlash("error", "Sync word must be between 0 and 255.");
       }
     }
   }
 
   server.sendHeader("Location", "/syncword", true);
   server.send(302, "text/plain", "");
-}
-
-String getFlashbag() {
-  if (flash_bag.length() > 0) {
-    String flash_bag_content = "<style>ul.flashbag{padding:0;list-style:none}ul.flashbag li{padding:10px;background:#efeeee;border:1px solid white}</style><ul class='flashbag'><li>";
-    flash_bag.replace("\n", "</li><li>");
-    flash_bag_content += flash_bag.substring(0, flash_bag.lastIndexOf("<li>"));
-    flash_bag_content += "</ul><br />";
-    flash_bag = "";
-
-    return flash_bag_content;
-  }
-
-  return "";
 }
 
 String buildPacketsJson() {
@@ -210,10 +177,9 @@ void initWebServer() {
   Serial.print("JSON Buffer size: ");
   Serial.println(json_buffer_size);
 
-  server.on("/", handleRoot);
-  server.on("/json", handleJson);
-  server.on("/syncword", HTTP_GET, handleSyncWordGet);
-  server.on("/syncword", HTTP_POST, handleSyncWordPost);
+  server.addEndpoint("/json", "Show last received LoRa packets in JSON.", handleJson);
+  server.addEndpoint("/syncword", "Show and change the sync word.", HTTP_GET, handleSyncWordGet);
+  server.addEndpoint("/syncword", "", HTTP_POST, handleSyncWordPost);
   server.begin();
   Serial.println("HTTP server started: /, /json, /syncword [GET,POST]");
 }
@@ -226,7 +192,7 @@ void initLoRa() {
 
   if (!LoRa.begin(433E6)) {
     Serial.println("!! ERR: Failed to start LoRa");
-    init_error = 1;
+    server.setIndexContentPrefix("<h2 style='color: red'>Error during initialization of the LoRa module.</h2>");
   } else {
     LoRa.setSyncWord(sync_word);
     LoRa.onReceive(onLoRaReceive);
@@ -237,11 +203,16 @@ void initLoRa() {
 void setup() {
 	Serial.begin(115200);
 	while (!Serial);
-  delay(300);
+  delay(100);
+
+  String hello_message = "Welcome to the LoRa ESPer Bridge ";
+  hello_message.concat(version);
   Serial.println();
-	Serial.print("LoRa ESPer Bridge ");
-  Serial.println(version);
+	Serial.print(hello_message);
   Serial.println();
+  hello_message = "<p><b>" + hello_message;
+  hello_message.concat("</b></p><br /><br />");
+  server.setIndexContentPrefix(hello_message.c_str());
 
   initLoRa();
   initWiFiAP();
