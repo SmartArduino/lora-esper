@@ -120,7 +120,11 @@ int WebServer::addEndpoint(const char *path, const char *description, HTTPMethod
 }
 
 void WebServer::send(int code, const char *content_type, const String &content) {
-  boolean send_flashbag = (strcmp(content_type, "text/html") == 0 && (code % 400) < 100);
+  boolean send_flashbag = (
+    strcmp(content_type, "text/html") == 0 &&
+    (code >= 200 && code < 300 && code >= 400 && code < 600 &&
+      code != 204 && code != 205 && code != 207 && code != 208)
+  );
 
   this->send(code, content_type, content, send_flashbag);
 }
@@ -128,7 +132,11 @@ void WebServer::send(int code, const char *content_type, const String &content) 
 void WebServer::send(int code, const char *content_type, const String &content, boolean send_flashbag) {
   if (send_flashbag) {
     String content_with_flashbag = this->getFlashbag();
-    content_with_flashbag.concat(content);
+    if (content_with_flashbag.length() > 0) {
+      content_with_flashbag.concat(content);
+    } else {
+      content_with_flashbag = content;
+    }
 
     ESP8266WebServer::send(code, content_type, content_with_flashbag);
   } else {
