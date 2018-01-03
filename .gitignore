@@ -1,4 +1,4 @@
-.travis
+.travis.yml
 .pioenvs
 .piolibdeps
 .clang_complete
