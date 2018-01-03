@@ -45,7 +45,7 @@ const char* WebServer::getIndexPath(void) {
 }
 
 void WebServer::setIndexContentPrefix(const char *prefix) {
-  this->__index_content_prefix = String(prefix);
+  this->setIndexContentPrefix(prefix);
 }
 
 String& WebServer::getIndexContentPrefix(void) {
@@ -100,7 +100,7 @@ int WebServer::addEndpoint(const char *path, const char *description, THandlerFu
 }
 
 int WebServer::addEndpoint(const char *path, const char *description, HTTPMethod method, THandlerFunction fn) {
-  if (path == NULL || path[0] == '\0' || path[0] != '/') return 1;
+  if (path == NULL || path[0] != '/') return 1;
 
   struct webserver_endpoint* endpoint = (webserver_endpoint*) malloc(sizeof(webserver_endpoint));
   endpoint->path = path;
