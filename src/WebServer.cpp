@@ -47,7 +47,7 @@ const char* WebServer::getIndexPath(void) {
 }
 
 void WebServer::setIndexContentPrefix(const char *prefix) {
-  this->setIndexContentPrefix(prefix);
+  this->__index_content_prefix = String(prefix);
 }
 
 String& WebServer::getIndexContentPrefix(void) {
