@@ -2,10 +2,12 @@
 
 WebServer::WebServer(IPAddress addr, int port) {
   this->__endpoints = nullptr;
+  this->setIndexPath("/");
 }
 
 WebServer::WebServer(int port) {
   this->__endpoints = nullptr;
+  this->setIndexPath("/");
 }
 
 WebServer::~WebServer(void) {
