@@ -68,7 +68,7 @@ void handleSyncWordGet() {
   String sw_name = "default";
   if (sync_word > -1) {
     char sw_buff[9];
-    sprintf(sw_buff, "0x%#02X (%u)", sync_word, sync_word);
+    sprintf(sw_buff, "0x%02X (%u)", sync_word, sync_word);
     sw_name = String(sw_buff);
   }
 
@@ -90,7 +90,7 @@ void handleSyncWordPost() {
         sync_word = sw_i_new;
         LoRa.setSyncWord(sync_word);
         char flash[30];
-        sprintf(flash, "Sync word set to 0x%#02X (%u).", sw_i_new, sw_i_new);
+        sprintf(flash, "Sync word set to 0x%02X (%u).", sw_i_new, sw_i_new);
         server.addFlash("success", flash);
       } else {
         server.addFlash("error", "Sync word must be between 0 and 255.");
