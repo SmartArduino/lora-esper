@@ -37,8 +37,8 @@ void WebServer::__index_fn(void) {
 }
 
 void WebServer::setIndexPath(const char *path) {
-  if (strcmp(this->__index_path, path) == 0) {
-    this->on(this->__index_path, HTTP_ANY, NULL);
+  if (path && path[0] == '/' && (this->__index_path == NULL || strcmp(this->__index_path, path) == 0)) {
+    if (this->__index_path) this->on(this->__index_path, HTTP_ANY, NULL);
     this->__index_path = path;
     this->on(this->__index_path, HTTP_ANY, [=](void){ this->__index_fn(); });
   }
