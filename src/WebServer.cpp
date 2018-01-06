@@ -88,6 +88,12 @@ String WebServer::getFlashbag() {
         "background: #efeeee;"
         "border: 1px solid white;"
       "}"
+      "ul.flashbag li.flash-success {"
+        "background: #baffc9;"
+      "}"
+      "ul.flashbag li.flash-error {"
+        "background: #ffb3ba;"
+      "}"
     "</style>"
     "<ul class='flashbag'>";
 
@@ -124,8 +130,7 @@ int WebServer::addEndpoint(const char *path, const char *description, HTTPMethod
 void WebServer::send(int code, const char *content_type, const String &content) {
   boolean send_flashbag = (
     strcmp(content_type, "text/html") == 0 &&
-    (code >= 200 && code < 300 && code >= 400 && code < 600 &&
-      code != 204 && code != 205 && code != 207 && code != 208)
+    (code >= 200 && code < 300 && code != 204 && code != 205 && code != 207 && code != 208)
   );
 
   this->send(code, content_type, content, send_flashbag);
