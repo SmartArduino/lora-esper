@@ -19,7 +19,7 @@ void WebServer::__index_fn(void) {
 
   content.concat("<p class='endpoints'>");
   for (size_t i = 0; i < this->__endpoints_count; i++) {
-    if (this->__endpoints[i]->method != HTTP_GET || this->__endpoints[i]->method != HTTP_ANY) continue;
+    if (this->__endpoints[i]->method != HTTP_GET && this->__endpoints[i]->method != HTTP_ANY) continue;
 
     content.concat("<a href='");
     content.concat(this->__endpoints[i]->path);
