@@ -89,7 +89,7 @@ void handleSyncWordPost() {
       if (sw_i_new > -1 && sw_i_new < 256) {
         sync_word = sw_i_new;
         LoRa.setSyncWord(sync_word);
-        char flash[26];
+        char flash[30];
         sprintf(flash, "Sync word set to 0x%#02X (%u).", sw_i_new, sw_i_new);
         server.addFlash("success", flash);
       } else {
