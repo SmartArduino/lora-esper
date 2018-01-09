@@ -1,14 +1,24 @@
 #include "WebServer.h"
 
-WebServer::WebServer(IPAddress addr, int port) {
-  this->__endpoints = nullptr;
+WebServer::WebServer(const char *host, IPAddress addr, int port) : __host(host),
+__addr(addr), __redirect_to_host(true), __redirect_allow_ip(false) {
   this->setIndexPath("/");
-}
+};
 
-WebServer::WebServer(int port) {
-  this->__endpoints = nullptr;
+WebServer::WebServer(IPAddress addr, int port) : __host("esp8266.local"),
+__addr(IPAddress(192, 168, 4, 1)), __redirect_to_host(false), __redirect_allow_ip(false) {
   this->setIndexPath("/");
-}
+};
+
+WebServer::WebServer(const char *host, int port) : __host(host),
+__addr(IPAddress(192, 168, 4, 1)), __redirect_to_host(true), __redirect_allow_ip(false) {
+  this->setIndexPath("/");
+};
+
+WebServer::WebServer(int port) : __host("esp8266.local"),
+__addr(IPAddress(192, 168, 4, 1)), __redirect_to_host(false), __redirect_allow_ip(false) {
+  this->setIndexPath("/");
+};
 
 WebServer::~WebServer(void) {
   for (size_t i = 0; i < this->__endpoints_count; i++) free(this->__endpoints[i]);
@@ -36,11 +46,24 @@ void WebServer::__index_fn(void) {
   this->send(200, "text/html", content.c_str());
 }
 
+boolean WebServer::__host_redirection_fn(void) {
+  if (this->__redirect_to_host && !this->_hostHeader.equals(this->__host)
+      && (!this->__redirect_allow_ip || !this->_hostHeader.equals(this->__addr.toString()))
+  ) {
+    this->sendHeader("Location", String("http://") + this->__host, true);
+    this->send(302, "text/plain", "");
+
+    return true;
+  }
+
+  return false;
+}
+
 void WebServer::setIndexPath(const char *path) {
   if (path && path[0] == '/' && (this->__index_path == NULL || strcmp(this->__index_path, path) == 0)) {
     if (this->__index_path) this->on(this->__index_path, HTTP_ANY, NULL);
     this->__index_path = path;
-    this->on(this->__index_path, HTTP_ANY, [=](void){ this->__index_fn(); });
+    this->on(this->__index_path, HTTP_ANY, [=](void){ if (!this->__host_redirection_fn()) this->__index_fn(); });
   }
 }
 

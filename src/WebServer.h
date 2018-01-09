@@ -12,20 +12,30 @@ typedef struct webserver_endpoint {
   ESP8266WebServer::THandlerFunction callback;
 } webserver_endpoint;
 
+typedef std::function<boolean(void)> PrePostHandlerFunction;
+
 class WebServer : public ESP8266WebServer {
 private:
-  struct webserver_endpoint** __endpoints;
+  struct webserver_endpoint** __endpoints = nullptr;
   size_t __endpoints_count = 0;
+  const char *__host;
+  IPAddress __addr;
+  boolean __redirect_to_host;
+  boolean __redirect_allow_ip;
   const char *__index_path;
   String __index_content_prefix;
   String __flashbag;
 
   void __index_fn(void);
+  boolean __host_redirection_fn(void);
 
 public:
+  WebServer(const char *host, IPAddress addr, int port = 80);
   WebServer(IPAddress addr, int port = 80);
+  WebServer(const char *host, int port = 80);
   WebServer(int port = 80);
   ~WebServer(void);
+  void setRedirectToHost(boolean host_redirect, boolean allow_ip);
   void setIndexPath(const char *path);
   const char* getIndexPath(void);
   void setIndexContentPrefix(const char *prefix);

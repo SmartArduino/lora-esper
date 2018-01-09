@@ -25,10 +25,11 @@ typedef struct lora_packet {
 const char *version = "v0.2";
 const char *ssid = "LoRa ESPer";
 const char *host = "lora";  // .local will be appended, so "lora" becomes "lora.local"
+const char *host_with_local = "lora.local";
 IPAddress host_ip(192, 168, 4, 1);
 IPAddress gateway(192, 168, 4, 1);
 IPAddress subnet(255, 255, 255, 0);
-WebServer server(80);
+WebServer server(host_with_local, host_ip, 80);
 DNSServer dns;
 const size_t packet_buffer_length = 50;
 const size_t json_buffer_size = JSON_ARRAY_SIZE(3) + packet_buffer_length * JSON_OBJECT_SIZE(3);
