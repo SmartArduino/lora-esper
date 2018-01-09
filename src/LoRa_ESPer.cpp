@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
+#include <DNSServer.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
 #include <LoRa.h>
@@ -28,6 +29,7 @@ IPAddress host_ip(192, 168, 4, 1);
 IPAddress gateway(192, 168, 4, 1);
 IPAddress subnet(255, 255, 255, 0);
 WebServer server(80);
+DNSServer dns;
 const size_t packet_buffer_length = 50;
 const size_t json_buffer_size = JSON_ARRAY_SIZE(3) + packet_buffer_length * JSON_OBJECT_SIZE(3);
 
@@ -46,8 +48,8 @@ int sync_word = 0x34;
 // Web handlers
 void handleRoot();
 void handleJson();
-void handleChannelGet();
-void handleChannelPost();
+void handleSyncWordGet();
+void handleSyncWordPost();
 // Web utilities
 String buildPacketsJson();
 // Packet buffer utiliities
@@ -55,6 +57,7 @@ void pushPacket(lora_packet packet);
 // LoRa handler
 void onLoRaReceive(int packet_size);
 // Inits
+void initDNS();
 void initWiFiAP();
 void initWebServer();
 void initLoRa();
@@ -154,24 +157,38 @@ void onLoRaReceive(int packet_size) {
   Serial.println(packet->data);
 }
 
+void initDNS() {
+  delay(50);
+
+  dns.setTTL(60);
+  dns.setErrorReplyCode(DNSReplyCode::NoError);
+  if (dns.start(53, "*", host_ip)) {
+    Serial.print("DNS started, announcing * as ");
+    Serial.println(host_ip);
+  } else {
+    Serial.println("!! WARN: Failed to start DNS");
+  }
+
+  if (MDNS.begin(host)) {
+    MDNS.addService("http", "tcp", 80);
+    Serial.print("mDNS hostname: ");
+    Serial.print(host);
+    Serial.println(".local");
+  } else {
+    Serial.println("!! WARN: Failed to start mDNS");
+  }
+}
+
 void initWiFiAP() {
   WiFi.hostname(host);
   WiFi.softAPConfig(host_ip, gateway, subnet);
   WiFi.mode(WIFI_AP);
   if (WiFi.softAP(ssid)) {
-    IPAddress hostIP = WiFi.softAPIP();
-
+    host_ip = WiFi.softAPIP();
     Serial.print("AP IP address: ");
-    Serial.println(hostIP);
+    Serial.println(host_ip);
 
-    if (MDNS.begin(host)) {
-      MDNS.addService("http", "tcp", 80);
-      Serial.print("mDNS hostname: ");
-      Serial.print(host);
-      Serial.println(".local");
-    } else {
-      Serial.println("!! WARN: Failed to start mDNS");
-    }
+    initDNS();
   } else {
     Serial.println("!! ERR: Failed to start WiFi AP");
   }
@@ -224,5 +241,8 @@ void setup() {
 }
 
 void loop() {
-  while (1) server.handleClient();
+  while (1) {
+    dns.processNextRequest();
+    server.handleClient();
+  }
 }
