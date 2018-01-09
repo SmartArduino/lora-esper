@@ -25,6 +25,11 @@ WebServer::~WebServer(void) {
   free(this->__endpoints);
 }
 
+void WebServer::setRedirectToHost(boolean host_redirect, boolean allow_ip) {
+  this->__redirect_to_host = host_redirect;
+  this->__redirect_allow_ip = allow_ip;
+}
+
 void WebServer::__index_fn(void) {
   String content = this->getFlashbag();
   content.concat(this->__index_content_prefix);
