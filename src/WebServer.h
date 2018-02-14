@@ -12,36 +12,34 @@ typedef struct webserver_endpoint {
     ESP8266WebServer::THandlerFunction callback;
 } webserver_endpoint;
 
-typedef std::function<boolean(void)> PrePostHandlerFunction;
-
 class WebServer : public ESP8266WebServer {
 private:
     struct webserver_endpoint **__endpoints = nullptr;
     size_t __endpoints_count = 0;
     const char *__host;
     IPAddress __addr;
-    boolean __redirect_to_host;
-    boolean __redirect_allow_ip;
+    bool __redirect_to_host;
+    bool __redirect_allow_ip;
     const char *__index_path;
     String __index_content_prefix;
     String __flashbag;
 
     void __index_fn(void);
 
-    boolean __host_redirection_fn(void);
+    bool __host_redirection_fn(void);
 
 public:
     WebServer(const char *host, IPAddress addr, int port = 80);
 
-    WebServer(IPAddress addr, int port = 80);
+    explicit WebServer(IPAddress addr, int port = 80);
 
-    WebServer(const char *host, int port = 80);
+    explicit WebServer(const char *host, int port = 80);
 
-    WebServer(int port = 80);
+    explicit WebServer(int port = 80);
 
     ~WebServer(void);
 
-    void setRedirectToHost(boolean host_redirect, boolean allow_ip);
+    void setRedirectToHost(bool host_redirect, bool allow_ip);
 
     void setIndexPath(const char *path);
 
@@ -63,7 +61,7 @@ public:
 
     void send(int code, const char *content_type, const String &content);
 
-    void send(int code, const char *content_type, const String &content, boolean send_flashbag);
+    void send(int code, const char *content_type, const String &content, bool send_flashbag);
 };
 
 #endif // __LORA_ESPER_WEBSERVER_H__

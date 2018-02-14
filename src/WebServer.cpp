@@ -1,25 +1,29 @@
 #include "WebServer.h"
 
 WebServer::WebServer(const char *host, IPAddress addr, int port) : __host(host),
-                                                                   __addr(addr), __redirect_to_host(true),
+                                                                   __addr(addr),
+                                                                   __redirect_to_host(true),
                                                                    __redirect_allow_ip(false) {
     this->setIndexPath("/");
 };
 
 WebServer::WebServer(IPAddress addr, int port) : __host("esp8266.local"),
-                                                 __addr(IPAddress(192, 168, 4, 1)), __redirect_to_host(false),
+                                                 __addr(IPAddress(192, 168, 4, 1)),
+                                                 __redirect_to_host(false),
                                                  __redirect_allow_ip(false) {
     this->setIndexPath("/");
 };
 
 WebServer::WebServer(const char *host, int port) : __host(host),
-                                                   __addr(IPAddress(192, 168, 4, 1)), __redirect_to_host(true),
+                                                   __addr(IPAddress(192, 168, 4, 1)),
+                                                   __redirect_to_host(true),
                                                    __redirect_allow_ip(false) {
     this->setIndexPath("/");
 };
 
 WebServer::WebServer(int port) : __host("esp8266.local"),
-                                 __addr(IPAddress(192, 168, 4, 1)), __redirect_to_host(false),
+                                 __addr(IPAddress(192, 168, 4, 1)),
+                                 __redirect_to_host(false),
                                  __redirect_allow_ip(false) {
     this->setIndexPath("/");
 };
@@ -29,7 +33,7 @@ WebServer::~WebServer(void) {
     free(this->__endpoints);
 }
 
-void WebServer::setRedirectToHost(boolean host_redirect, boolean allow_ip) {
+void WebServer::setRedirectToHost(bool host_redirect, bool allow_ip) {
     this->__redirect_to_host = host_redirect;
     this->__redirect_allow_ip = allow_ip;
 }
@@ -55,7 +59,7 @@ void WebServer::__index_fn(void) {
     this->send(200, "text/html", content.c_str());
 }
 
-boolean WebServer::__host_redirection_fn(void) {
+bool WebServer::__host_redirection_fn(void) {
     if (this->__redirect_to_host && !this->_hostHeader.equals(this->__host)
         && (!this->__redirect_allow_ip || !this->_hostHeader.equals(this->__addr.toString()))
             ) {
@@ -161,7 +165,7 @@ int WebServer::addEndpoint(const char *path, const char *description, HTTPMethod
 }
 
 void WebServer::send(int code, const char *content_type, const String &content) {
-    boolean send_flashbag = (
+    bool send_flashbag = (
             strcmp(content_type, "text/html") == 0 &&
             (code >= 200 && code < 300 && code != 204 && code != 205 && code != 207 && code != 208)
     );
@@ -169,7 +173,7 @@ void WebServer::send(int code, const char *content_type, const String &content) 
     this->send(code, content_type, content, send_flashbag);
 }
 
-void WebServer::send(int code, const char *content_type, const String &content, boolean send_flashbag) {
+void WebServer::send(int code, const char *content_type, const String &content, bool send_flashbag) {
     if (send_flashbag) {
         String content_with_flashbag = this->getFlashbag();
         if (content_with_flashbag.length() > 0) {
