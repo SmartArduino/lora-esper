@@ -5,6 +5,7 @@
 #include <DNSServer.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
+#include <base64.h>
 #include <LoRa.h>
 
 
@@ -34,6 +35,10 @@ WebServer server(host_with_local, host_ip, 80);
 DNSServer dns;
 const size_t packet_buffer_length = 50;
 const size_t json_buffer_size = JSON_ARRAY_SIZE(3) + packet_buffer_length * JSON_OBJECT_SIZE(3);
+const uint8_t JSON_DATA_FORMAT_RAW = 0;
+const uint8_t JSON_DATA_FORMAT_BIN = 1;
+const uint8_t JSON_DATA_FORMAT_HEX = 2;
+const uint8_t JSON_DATA_FORMAT_BASE64 = 3;
 
 
 /*
@@ -52,7 +57,10 @@ void handleJson();
 void handleSyncWordGet();
 void handleSyncWordPost();
 // Web utilities
-String buildPacketsJson();
+String buildPacketsJson(uint8_t format = JSON_DATA_FORMAT_BASE64);
+String encodeToFormat(char *buffer, size_t length, const uint8_t format = JSON_DATA_FORMAT_RAW);
+String byteArrayToHexString(char *buffer, size_t length);
+String byteArrayToBinString(char *buffer, size_t length);
 // Packet buffer utiliities
 void pushPacket(lora_packet* packet);
 // LoRa handler
@@ -65,7 +73,18 @@ void initLoRa(long frequency = 868E6);
 
 
 void handleJson() {
-  server.send(200, "application/json", buildPacketsJson());
+  uint8_t format = JSON_DATA_FORMAT_RAW;
+  String formatArg = server.arg("format");
+  if (formatArg.equals("base64")) {
+    format = JSON_DATA_FORMAT_BASE64;
+  } else if (formatArg.equals("hex")) {
+    format = JSON_DATA_FORMAT_HEX;
+  } else if (formatArg.equals("bin")) {
+    format = JSON_DATA_FORMAT_BIN;
+  }
+
+  String json = buildPacketsJson(format);
+  server.send_P(200, "application/json", json.c_str(), json.length());
 }
 
 void handleSyncWordGet() {
@@ -106,7 +125,7 @@ void handleSyncWordPost() {
   server.send(302, "text/plain", "");
 }
 
-String buildPacketsJson() {
+String buildPacketsJson(uint8_t format) {
   String json_str;
   DynamicJsonBuffer json(json_buffer_size);
   JsonArray& json_root = json.createArray();
@@ -118,7 +137,7 @@ String buildPacketsJson() {
     j_pack["rssi"] = packet->rssi;
     j_pack["snr"] = packet->snr;
     j_pack["size"] = packet->size;
-    j_pack["data"] = String(packet->data);
+    j_pack["data"] = encodeToFormat(packet->data, packet->size, format);
     i = (i - 1) % packet_buffer_length;
     packet = packets[i];
   }
@@ -127,6 +146,55 @@ String buildPacketsJson() {
   json.clear();
 
   return json_str;
+}
+
+String encodeToFormat(char *buffer, size_t length, const uint8_t format) {
+  switch (format) {
+    case JSON_DATA_FORMAT_BASE64:
+      return base64::encode((uint8_t*) buffer, length, false);
+
+    case JSON_DATA_FORMAT_HEX:
+      return byteArrayToHexString(buffer, length);
+
+    case JSON_DATA_FORMAT_BIN:
+      return byteArrayToBinString(buffer, length);
+
+    default:
+    case JSON_DATA_FORMAT_RAW:
+      return String(buffer);
+  }
+}
+
+String byteArrayToHexString(char *buffer, size_t length) {
+  size_t newLength = length * 2;
+  char out[newLength + 1];
+  char c;
+  for (size_t i = 0; i < length; i++) {
+    c = (buffer[i] >> 4) & 0x0F;
+    out[i * 2] = c + (c > 9 ? 55 : 48);
+    c = buffer[i] & 0x0F;
+    out[(i * 2) + 1] = c + (c > 9 ? 55 : 48);
+  }
+  out[newLength] = '\0';
+
+  return String(out);
+}
+
+String byteArrayToBinString(char *buffer, size_t length) {
+  Serial.print("bin start mem free: "); Serial.println(system_get_free_heap_size());
+  Serial.print("length: "); Serial.print(length); Serial.print(", needed: "); Serial.println((length * 8) + 1);
+  size_t newLength = length * 8;
+  char out[newLength + 1];
+  Serial.print("bin after declare mem free: "); Serial.println(system_get_free_heap_size());
+  for (size_t i = 0; i < length; i++) {
+    for (char j = 7; j >= 0; j--) {
+      out[(i * 8) + (7 - j)] = ((buffer[i] >> j) & 0x01) + 48;
+    }
+  }
+  out[newLength] = '\0';
+  Serial.print("bin end mem free: "); Serial.println(system_get_free_heap_size());
+
+  return String(out);
 }
 
 void pushPacket(lora_packet* packet) {
