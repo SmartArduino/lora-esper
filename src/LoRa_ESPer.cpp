@@ -59,9 +59,9 @@ void handleSyncWordGet();
 void handleSyncWordPost();
 // Web utilities
 String buildPacketsJson(uint8_t format = JSON_DATA_FORMAT_BASE64);
-String encodeToFormat(char *buffer, size_t length, const uint8_t format = JSON_DATA_FORMAT_RAW);
-String byteArrayToHexString(char *buffer, size_t length);
-String byteArrayToBinString(char *buffer, size_t length);
+String encodeToFormat(char *buffer, size_t length, uint8_t format = JSON_DATA_FORMAT_RAW);
+String byteArrayToHexString(const char *buffer, size_t length);
+String byteArrayToBinString(const char *buffer, size_t length);
 // Packet buffer utilities
 void pushPacket(lora_packet *packet);
 // LoRa handler
@@ -166,7 +166,7 @@ String encodeToFormat(char *buffer, size_t length, const uint8_t format) {
     }
 }
 
-String byteArrayToHexString(char *buffer, size_t length) {
+String byteArrayToHexString(const char *buffer, size_t length) {
     size_t newLength = length * 2;
     char out[newLength + 1];
     char c;
@@ -181,7 +181,7 @@ String byteArrayToHexString(char *buffer, size_t length) {
     return String(out);
 }
 
-String byteArrayToBinString(char *buffer, size_t length) {
+String byteArrayToBinString(const char *buffer, size_t length) {
     size_t newLength = length * 8;
     char out[newLength + 1];
     for (size_t i = 0; i < length; i++) {
@@ -206,7 +206,7 @@ void onLoRaReceive(int packet_size) {
     lora_packet *packet = (lora_packet *) malloc(sizeof(lora_packet) + packet_size + 1);
 
     size_t i = 0;
-    for (; i < packet_size && LoRa.available(); i++) packet->data[i] = LoRa.read();
+    for (; i < packet_size && LoRa.available(); i++) packet->data[i] = (char) LoRa.read();
     packet->data[i] = '\0';
     packet->size = i;
     packet->rssi = LoRa.packetRssi();
