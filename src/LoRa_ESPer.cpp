@@ -24,7 +24,7 @@ typedef struct lora_packet {
 /*
  * Constants
  */
-const char *version = "v0.2";
+const char *version = "v0.3";
 const char *ssid = "LoRa ESPer";
 const char *host = "lora";  // .local will be appended, so "lora" becomes "lora.local"
 const char *host_with_local = "lora.local";
