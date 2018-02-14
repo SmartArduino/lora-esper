@@ -131,9 +131,9 @@ String buildPacketsJson(uint8_t format) {
   DynamicJsonBuffer json(json_buffer_size);
   JsonArray& json_root = json.createArray();
 
-  size_t i = ((p_pos - 1) % packet_buffer_length);
+  size_t i = p_pos, last = (p_pos + 1) % packet_buffer_length;
   lora_packet* packet = packets[i];
-  while (i != p_pos && packet) {
+  while (i != last && packet) {
     JsonObject& j_pack = json_root.createNestedObject();
     j_pack["rssi"] = packet->rssi;
     j_pack["snr"] = packet->snr;
