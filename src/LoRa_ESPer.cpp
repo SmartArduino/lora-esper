@@ -185,8 +185,8 @@ String byteArrayToBinString(char *buffer, size_t length) {
     size_t newLength = length * 8;
     char out[newLength + 1];
     for (size_t i = 0; i < length; i++) {
-        for (char j = 7; j >= 0; j--) {
-            out[(i * 8) + (7 - j)] = ((buffer[i] >> j) & 0x01) + 48;
+        for (short j = 7; j >= 0; j--) {
+            out[(i * 8) + (7 - j)] = (char) (((buffer[i] >> j) & 0x01) + 48);
         }
     }
     out[newLength] = '\0';
