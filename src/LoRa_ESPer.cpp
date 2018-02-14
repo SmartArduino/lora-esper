@@ -13,9 +13,10 @@
  */
  // lora_packet.data MUST be declared LAST
 typedef struct lora_packet {
-  float snr;
-  int rssi;
-  char data[];
+  float  snr;
+  int    rssi;
+  size_t size;
+  char   data[];
 } lora_packet;
 
 
@@ -111,14 +112,14 @@ String buildPacketsJson() {
   DynamicJsonBuffer json(json_buffer_size);
   JsonArray& json_root = json.createArray();
 
-  size_t i = ((p_pos - 1) % packet_buffer_length), last = p_pos;
+  size_t i = ((p_pos - 1) % packet_buffer_length);
   lora_packet* packet = packets[i];
   while (i != p_pos && packet) {
     JsonObject& j_pack = json_root.createNestedObject();
     j_pack["rssi"] = packet->rssi;
     j_pack["snr"] = packet->snr;
+    j_pack["size"] = packet->size;
     j_pack["data"] = String(packet->data);
-
     i = (i - 1) % packet_buffer_length;
     packet = packets[i];
   }
@@ -143,6 +144,7 @@ void onLoRaReceive(int packet_size) {
   size_t i = 0;
   for (;i < packet_size && LoRa.available(); i++) packet->data[i] = LoRa.read();
   packet->data[i] = '\0';
+  packet->size = i;
   packet->rssi = LoRa.packetRssi();
   packet->snr = LoRa.packetSnr();
 
@@ -154,8 +156,8 @@ void onLoRaReceive(int packet_size) {
   Serial.print(packet->snr);
   Serial.print(", size ");
   Serial.print(packet_size);
-  Serial.print(", data: ");
-  Serial.println(packet->data);
+  Serial.print(", actual size ");
+  Serial.println(packet->size);
 }
 
 void initDNS() {
