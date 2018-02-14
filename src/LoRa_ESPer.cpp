@@ -33,6 +33,7 @@ IPAddress gateway(192, 168, 4, 1);
 IPAddress subnet(255, 255, 255, 0);
 WebServer server(host_with_local, host_ip, 80);
 DNSServer dns;
+const unsigned long lora_frequency = (unsigned long) 8681e5;
 const size_t packet_buffer_length = 50;
 const size_t json_buffer_size = JSON_ARRAY_SIZE(3) + packet_buffer_length * JSON_OBJECT_SIZE(3);
 const uint8_t JSON_DATA_FORMAT_RAW = 0;
@@ -61,7 +62,7 @@ String buildPacketsJson(uint8_t format = JSON_DATA_FORMAT_BASE64);
 String encodeToFormat(char *buffer, size_t length, const uint8_t format = JSON_DATA_FORMAT_RAW);
 String byteArrayToHexString(char *buffer, size_t length);
 String byteArrayToBinString(char *buffer, size_t length);
-// Packet buffer utiliities
+// Packet buffer utilities
 void pushPacket(lora_packet* packet);
 // LoRa handler
 void onLoRaReceive(int packet_size);
@@ -69,7 +70,7 @@ void onLoRaReceive(int packet_size);
 void initDNS();
 void initWiFiAP();
 void initWebServer();
-void initLoRa(long frequency = 868E6);
+void initLoRa(unsigned long frequency = (unsigned long) 868E6);
 
 
 void handleJson() {
@@ -275,7 +276,7 @@ void initWebServer() {
   Serial.println("HTTP server started: /, /json, /syncword [GET,POST]");
 }
 
-void initLoRa(long frequency) {
+void initLoRa(unsigned long frequency) {
   SPI.setFrequency(4E6);
   LoRa.setSPIFrequency(4E6);
   // NSS = D8, Reset = D0,  DIO0 = D1
@@ -308,7 +309,7 @@ void setup() {
   hello_message.concat("</b></p><br /><br />");
   server.setIndexContentPrefix(hello_message.c_str());
 
-  initLoRa();
+  initLoRa(lora_frequency);
   initWiFiAP();
   initWebServer();
 }
