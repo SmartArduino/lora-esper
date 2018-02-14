@@ -48,21 +48,20 @@ int sync_word = 0x34;
  *  Method definitions
  */
 // Web handlers
-void handleRoot();
 void handleJson();
 void handleSyncWordGet();
 void handleSyncWordPost();
 // Web utilities
 String buildPacketsJson();
 // Packet buffer utiliities
-void pushPacket(lora_packet packet);
+void pushPacket(lora_packet* packet);
 // LoRa handler
 void onLoRaReceive(int packet_size);
 // Inits
 void initDNS();
 void initWiFiAP();
 void initWebServer();
-void initLoRa();
+void initLoRa(long frequency = 868E6);
 
 
 void handleJson() {
@@ -79,7 +78,7 @@ void handleSyncWordGet() {
 
   server.send(200, "text/html",
     "<p>Current sync word: <code>" + sw_name + "</code></p><br />"
-    "<p>Public sync word: <code>0x34 (52)</code><br />Private (LoRaWAN) sync word: <code>0x12 (18)</code><br />Allowed: 1-byte integer (between 0 and 255)</p><br />"
+    "<p>Public sync word: <code>0x34 (52)</code><br />Private (Multitech LoRaWAN) sync word: <code>0x12 (18)</code><br />Allowed: 1-byte integer (between 0 and 255)</p><br />"
     "<form method='post'><p>Set new sync word (dec): <input name='sync_word' value='" + (sync_word > -1 ? String(sync_word) : "") + "' /> <input type='submit' name='submit' value='submit' /></p></form>"
   );
 }
@@ -208,19 +207,22 @@ void initWebServer() {
   Serial.println("HTTP server started: /, /json, /syncword [GET,POST]");
 }
 
-void initLoRa() {
+void initLoRa(long frequency) {
   SPI.setFrequency(4E6);
   LoRa.setSPIFrequency(4E6);
   // NSS = D8, Reset = D0,  DIO0 = D1
   LoRa.setPins(15, 16, 5);
 
-  if (!LoRa.begin(433E6)) {
+  if (!LoRa.begin(frequency)) {
     Serial.println("!! ERR: Failed to start LoRa");
     server.setIndexContentPrefix("<h2 style='color: red'>Error during initialization of the LoRa module.</h2>");
   } else {
     LoRa.setSyncWord(sync_word);
     LoRa.onReceive(onLoRaReceive);
     LoRa.receive();
+    Serial.print("LoRa module initialized with ");
+    Serial.print(frequency);
+    Serial.println("Hz");
   }
 }
 
